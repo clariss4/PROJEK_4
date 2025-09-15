@@ -48,7 +48,6 @@ class Student {
     return {
       'id': id,
       'nisn': nisn,
-      'namaLengkap': namaLengkap,
       'jenisKelamin': jenisKelamin,
       'agama': agama,
       'tempatTanggalLahir': tempatTanggalLahir,

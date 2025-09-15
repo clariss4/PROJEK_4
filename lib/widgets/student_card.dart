@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/student.dart';
 
 class StudentCard extends StatelessWidget {
@@ -18,21 +19,34 @@ class StudentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 4,
       child: ListTile(
         onTap: onTap,
-        title: Text(student.namaLengkap),
+        leading: CircleAvatar(
+          backgroundColor: Colors.blueAccent,
+          child: Text(
+            student.namaLengkap.isNotEmpty
+                ? student.namaLengkap[0].toUpperCase()
+                : '?',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+        title: Text(
+          student.namaLengkap,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
         subtitle: Text('NISN: ${student.nisn}'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(Icons.edit, color: Colors.blue),
               onPressed: onEdit,
+              icon: const Icon(Icons.edit, color: Colors.blue),
             ),
             IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
               onPressed: onDelete,
+              icon: const Icon(Icons.delete, color: Colors.grey),
             ),
           ],
         ),

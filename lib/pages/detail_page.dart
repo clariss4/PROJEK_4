@@ -136,6 +136,7 @@ class DetailPage extends StatelessWidget {
                 _buildDetail('Nama Ayah', student.namaAyah, icon: Icons.man),
                 _buildDetail('Nama Ibu', student.namaIbu, icon: Icons.woman),
                 _buildDetail('Nama Wali', student.namaWali, icon: Icons.group),
+                _buildDetail('Alamat', student.agama, icon: Icons.home),
               ]),
             ],
           ),

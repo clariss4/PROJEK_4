@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../models/student.dart';
-import '../widgets/student_card.dart';
-import 'form_page.dart';
-import 'detail_page.dart';
+import '../pages/form_page.dart';
+import '../pages/detail_page.dart';
+import '../repositories/student_repository.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,25 +13,50 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<Student> _students = [];
-  final uuid = const Uuid();
+  final StudentRepository repository = StudentRepository();
+  List<Student> _students = [];
+  bool _loading = true;
 
-  void _addStudent(Student student) {
-    setState(() {
-      _students.add(student);
-    });
+  @override
+  void initState() {
+    super.initState();
+    _loadStudents();
   }
 
-  void _editStudent(Student updatedStudent, int index) {
-    setState(() {
-      _students[index] = updatedStudent;
-    });
+  Future<void> _loadStudents() async {
+    setState(() => _loading = true);
+    try {
+      final data = await repository.getStudents();
+      setState(() => _students = data);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal load data: $e')));
+    } finally {
+      setState(() => _loading = false);
+    }
   }
 
-  void _deleteStudent(int index) {
-    setState(() {
-      _students.removeAt(index);
-    });
+  Future<void> _deleteStudent(String id) async {
+    try {
+      await repository.deleteStudent(id);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Data berhasil dihapus')));
+      _loadStudents();
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal hapus data: $e')));
+    }
+  }
+
+  Future<void> _navigateToForm({Student? student}) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => FormPage(student: student)),
+    );
+    if (result == true) _loadStudents();
   }
 
   void _navigateToDetail(Student student) {
@@ -42,116 +66,186 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildStudentCard(Student student) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF56CCF2), Color(0xFF2F80ED)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blueAccent.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 12,
+        ),
+        leading: CircleAvatar(
+          radius: 28,
+          backgroundColor: Colors.white,
+          child: Text(
+            student.namaLengkap.substring(0, 1).toUpperCase(),
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: Colors.blueAccent,
+            ),
+          ),
+        ),
+        title: Text(
+          student.namaLengkap,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Colors.white,
+          ),
+        ),
+        subtitle: Text(
+          'NISN: ${student.nisn}',
+          style: GoogleFonts.poppins(fontSize: 14, color: Colors.white70),
+        ),
+        onTap: () => _navigateToDetail(student),
+        trailing: Wrap(
+          spacing: 12,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit),
+              color: Colors.yellowAccent,
+              onPressed: () => _navigateToForm(student: student),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete),
+              color: Colors.redAccent,
+              onPressed: () => showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  title: const Text('Konfirmasi'),
+                  content: const Text(
+                    'Apakah Anda yakin ingin menghapus data ini?',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Batal'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _deleteStudent(student.id);
+                      },
+                      child: const Text('Hapus'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade200, //backgraound home page
-      //appbar
       appBar: AppBar(
-        centerTitle: true,
-        toolbarHeight: 110,
-        elevation: 8,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true, // tulisan di tengah
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.lightBlueAccent, Colors.blueAccent],
+              colors: [Color(0xFF56CCF2), Color(0xFF2F80ED)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
         ),
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.school, color: Colors.white, size: 50),
+            Icon(Icons.school, color: Colors.white, size: 28), // icon topi
             const SizedBox(width: 10),
             Text(
-              'DATA SISWA SMK',
+              'Data Siswa',
               style: GoogleFonts.ubuntu(
-                color: Colors.white,
                 fontWeight: FontWeight.bold,
-                fontSize: 28,
+                fontSize: 22,
+                color: Colors.white,
               ),
             ),
           ],
         ),
       ),
-      body: _students.isEmpty
-          ? _buildEmptyState()
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ListView.separated(
-                itemCount: _students.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final student = _students[index];
-                  return StudentCard(
-                    student: student,
-                    onTap: () => _navigateToDetail(student),
-                    onEdit: () async {
-                      final updatedStudent = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              FormPage(student: student, index: index),
-                        ),
-                      );
-                      if (updatedStudent != null) {
-                        _editStudent(updatedStudent, index);
-                      }
-                    },
-                    onDelete: () => _deleteStudent(index),
-                  );
-                },
-              ),
-            ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final newStudent = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const FormPage()),
-          );
-          if (newStudent != null) {
-            _addStudent(newStudent);
-          }
-        },
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Tambah Data',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
+
+      body: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFE0EAFC), Color(0xFFCFDEF3)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
-        backgroundColor: Colors.lightBlue,
+        child: _loading
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF2F80ED)),
+              )
+            : RefreshIndicator(
+                onRefresh: _loadStudents,
+                color: Colors.blueAccent,
+                child: _students.isEmpty
+                    ? Center(
+                        child: Text(
+                          'Belum ada data siswa',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            color: Colors.blueGrey,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(top: 16, bottom: 80),
+                        itemCount: _students.length,
+                        itemBuilder: (context, index) =>
+                            _buildStudentCard(_students[index]),
+                      ),
+              ),
       ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.group, size: 100, color: Colors.grey),
-          const SizedBox(height: 20),
-          Text(
-            'Belum ada data siswa',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              color: Colors.grey.shade600,
-            ),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(50),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF56CCF2), Color(0xFF2F80ED)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          const SizedBox(height: 10),
-          Text(
-            'Tekan tombol + untuk menambahkan data',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey.shade500,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blueAccent.withOpacity(0.5),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
-          ),
-        ],
+          ],
+        ),
+        child: FloatingActionButton(
+          onPressed: () => _navigateToForm(),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: const Icon(Icons.add, size: 30),
+        ),
       ),
     );
   }

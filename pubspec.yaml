@@ -30,10 +30,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  img_picker: ^1.0.2
   google_fonts: ^6.3.1
   uuid: ^4.5.1
   cupertino_icons: ^1.0.8
+  supabase_flutter: ^2.10.1
 
 dev_dependencies:
   flutter_test:

@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/student.dart';
 
 class FormPage extends StatefulWidget {
   final Student? student;
-  final int? index;
-
-  const FormPage({super.key, this.student, this.index});
+  const FormPage({super.key, this.student});
 
   @override
   State<FormPage> createState() => _FormPageState();
@@ -16,7 +15,6 @@ class FormPage extends StatefulWidget {
 class _FormPageState extends State<FormPage> {
   final _formKey = GlobalKey<FormState>();
   final uuid = const Uuid();
-
   final Map<String, TextEditingController> controllers = {
     'nisn': TextEditingController(),
     'namaLengkap': TextEditingController(),
@@ -35,9 +33,13 @@ class _FormPageState extends State<FormPage> {
     'namaAyah': TextEditingController(),
     'namaIbu': TextEditingController(),
     'namaWali': TextEditingController(),
+    'alamat': TextEditingController(),
   };
 
   String? _selectedGender;
+  String? _selectedAlamatSiswaId;
+  String? _selectedAlamatOrtuId;
+  List<Map<String, dynamic>> _alamatList = [];
 
   @override
   void initState() {
@@ -47,7 +49,10 @@ class _FormPageState extends State<FormPage> {
         controller.text = widget.student!.toJson()[key] ?? '';
       });
       _selectedGender = widget.student!.jenisKelamin;
+      _selectedAlamatSiswaId = widget.student!.alamatSiswaId;
+      _selectedAlamatOrtuId = widget.student!.alamatOrtuId;
     }
+    _loadAlamat();
   }
 
   @override
@@ -56,31 +61,61 @@ class _FormPageState extends State<FormPage> {
     super.dispose();
   }
 
-  void _saveData() {
-    if (_formKey.currentState!.validate()) {
-      final newStudent = Student(
-        id: widget.student?.id ?? uuid.v4(),
-        nisn: controllers['nisn']!.text,
-        namaLengkap: controllers['namaLengkap']!.text,
-        jenisKelamin: _selectedGender ?? '',
-        agama: controllers['agama']!.text,
-        tempatTanggalLahir: controllers['tempatTanggalLahir']!.text,
-        noTlp: controllers['noTlp']!.text,
-        nik: controllers['nik']!.text,
-        jalan: controllers['jalan']!.text,
-        rtRw: controllers['rtRw']!.text,
-        dusun: controllers['dusun']!.text,
-        desa: controllers['desa']!.text,
-        kecamatan: controllers['kecamatan']!.text,
-        kabupaten: controllers['kabupaten']!.text,
-        provinsi: controllers['provinsi']!.text,
-        kodePos: controllers['kodePos']!.text,
-        namaAyah: controllers['namaAyah']!.text,
-        namaIbu: controllers['namaIbu']!.text,
-        namaWali: controllers['namaWali']!.text,
-      );
+  Future<void> _loadAlamat() async {
+    try {
+      final data = await Supabase.instance.client
+          .from('alamat')
+          .select()
+          .order('dusun');
+      setState(() {
+        _alamatList = List<Map<String, dynamic>>.from(data);
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal load alamat: $e')));
+    }
+  }
 
-      Navigator.pop(context, newStudent);
+  Future<void> _saveData() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final Map<String, dynamic> newData = {
+      'id': widget.student?.id ?? uuid.v4(),
+      'nisn': controllers['nisn']!.text,
+      'namaLengkap': controllers['namaLengkap']!.text,
+      'jenisKelamin': _selectedGender,
+      'agama': controllers['agama']!.text,
+      'tempatTanggalLahir': controllers['tempatTanggalLahir']!.text,
+      'noTlp': controllers['noTlp']!.text,
+      'nik': controllers['nik']!.text,
+      'jalan': controllers['jalan']!.text,
+      'rtRw': controllers['rtRw']!.text,
+      'dusun': controllers['dusun']!.text,
+      'desa': controllers['desa']!.text,
+      'kecamatan': controllers['kecamatan']!.text,
+      'kabupaten': controllers['kabupaten']!.text,
+      'provinsi': controllers['provinsi']!.text,
+      'kodePos': controllers['kodePos']!.text,
+      'alamat_siswa_id': _selectedAlamatSiswaId,
+      'alamat_ortu_id': _selectedAlamatOrtuId,
+      'namaAyah': controllers['namaAyah']!.text,
+      'namaIbu': controllers['namaIbu']!.text,
+      'namaWali': controllers['namaWali']!.text,
+      'alamat': controllers['alamat']!.text,
+      'created_at': DateTime.now().toIso8601String(),
+    };
+
+    try {
+      await Supabase.instance.client.from('student').upsert([newData]);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Data berhasil disimpan')));
+      Navigator.pop(context, true);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal simpan: $e')));
     }
   }
 
@@ -128,6 +163,54 @@ class _FormPageState extends State<FormPage> {
     );
   }
 
+  Widget _buildAutocompleteField({
+    required String label,
+    required TextEditingController controller,
+    required List<Map<String, dynamic>> items,
+    required ValueChanged<Map<String, dynamic>> onSelected,
+    IconData? icon,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Autocomplete<Map<String, dynamic>>(
+        displayStringForOption: (option) => option['dusun'] ?? '',
+        optionsBuilder: (TextEditingValue textEditingValue) {
+          if (textEditingValue.text.isEmpty) {
+            return const Iterable<Map<String, dynamic>>.empty();
+          }
+          return items.where(
+            (item) => (item['dusun'] ?? '').toLowerCase().contains(
+              textEditingValue.text.toLowerCase(),
+            ),
+          );
+        },
+        fieldViewBuilder:
+            (context, textEditingController, focusNode, onFieldSubmitted) {
+              textEditingController.text = controller.text;
+              return TextFormField(
+                controller: textEditingController,
+                focusNode: focusNode,
+                decoration: InputDecoration(
+                  labelText: label,
+                  prefixIcon: icon != null
+                      ? Icon(icon, color: Colors.blueAccent)
+                      : null,
+                  filled: true,
+                  fillColor: Colors.blue.shade50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Wajib diisi' : null,
+              );
+            },
+        onSelected: (selected) => onSelected(selected),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -142,7 +225,7 @@ class _FormPageState extends State<FormPage> {
         child: SafeArea(
           child: Column(
             children: [
-              // Custom AppBar dengan tombol kembali
+              // AppBar
               Container(
                 padding: const EdgeInsets.all(16),
                 width: double.infinity,
@@ -157,9 +240,7 @@ class _FormPageState extends State<FormPage> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () {
-                        Navigator.pop(context); // kembali ke homepage
-                      },
+                      onPressed: () => Navigator.pop(context),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -176,16 +257,15 @@ class _FormPageState extends State<FormPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 48), // agar judul tetap di tengah
+                    const SizedBox(width: 48),
                   ],
                 ),
               ),
               const SizedBox(height: 10),
 
-              // Form Input
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -289,42 +369,31 @@ class _FormPageState extends State<FormPage> {
                                 _buildSectionTitle('Alamat'),
                                 _buildTextField('jalan', 'Jalan', Icons.map),
                                 _buildTextField('rtRw', 'RT/RW', Icons.home),
-                                _buildTextField(
-                                  'dusun',
-                                  'Dusun',
-                                  Icons.location_city,
-                                ),
-                                _buildTextField(
-                                  'desa',
-                                  'Desa',
-                                  Icons.location_on,
-                                ),
-                                _buildTextField(
-                                  'kecamatan',
-                                  'Kecamatan',
-                                  Icons.maps_home_work,
-                                ),
-                                _buildTextField(
-                                  'kabupaten',
-                                  'Kabupaten',
-                                  Icons.apartment,
-                                ),
-                                _buildTextField(
-                                  'provinsi',
-                                  'Provinsi',
-                                  Icons.flag,
-                                ),
-                                _buildTextField(
-                                  'kodePos',
-                                  'Kode Pos',
-                                  Icons.markunread_mailbox,
-                                  isNumber: true,
+                                _buildAutocompleteField(
+                                  label: 'Dusun Siswa',
+                                  controller: controllers['dusun']!,
+                                  items: _alamatList,
+                                  icon: Icons.location_city,
+                                  onSelected: (selected) {
+                                    controllers['dusun']!.text =
+                                        selected['dusun'] ?? '';
+                                    controllers['desa']!.text =
+                                        selected['desa'] ?? '';
+                                    controllers['kecamatan']!.text =
+                                        selected['kecamatan'] ?? '';
+                                    controllers['kabupaten']!.text =
+                                        selected['kabupaten'] ?? '';
+                                    controllers['provinsi']!.text =
+                                        selected['provinsi'] ?? '';
+                                    controllers['kodePos']!.text =
+                                        selected['kode_pos'] ?? '';
+                                    _selectedAlamatSiswaId = selected['id'];
+                                  },
                                 ),
                               ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
 
                         // Orang Tua / Wali
                         Card(
@@ -353,6 +422,17 @@ class _FormPageState extends State<FormPage> {
                                   'Nama Wali',
                                   Icons.group,
                                 ),
+                                _buildAutocompleteField(
+                                  label: 'Dusun Wali',
+                                  controller: controllers['alamat']!,
+                                  items: _alamatList,
+                                  icon: Icons.home,
+                                  onSelected: (selected) {
+                                    controllers['alamat']!.text =
+                                        '${selected['dusun']}, ${selected['desa']}, ${selected['kecamatan']}, ${selected['kabupaten']}, ${selected['provinsi']}';
+                                    _selectedAlamatOrtuId = selected['id'];
+                                  },
+                                ),
                               ],
                             ),
                           ),
@@ -360,7 +440,6 @@ class _FormPageState extends State<FormPage> {
 
                         const SizedBox(height: 20),
 
-                        // Tombol Simpan
                         SizedBox(
                           width: double.infinity,
                           height: 50,

@@ -1,3 +1,4 @@
+// lib/models/student.dart
 class Student {
   final String id;
   final String nisn;
@@ -20,6 +21,10 @@ class Student {
   final String namaAyah;
   final String namaIbu;
   final String namaWali;
+  final String alamat;
+
+  final String? alamatSiswaId;
+  final String? alamatOrtuId;
 
   Student({
     required this.id,
@@ -41,6 +46,10 @@ class Student {
     required this.namaAyah,
     required this.namaIbu,
     required this.namaWali,
+    required this.alamat,
+
+    this.alamatOrtuId,
+    this.alamatSiswaId,
   });
 
   /// Ubah object Student menjadi Map<String, dynamic>
@@ -48,6 +57,7 @@ class Student {
     return {
       'id': id,
       'nisn': nisn,
+      'namaLengkap': namaLengkap,
       'jenisKelamin': jenisKelamin,
       'agama': agama,
       'tempatTanggalLahir': tempatTanggalLahir,
@@ -64,6 +74,9 @@ class Student {
       'namaAyah': namaAyah,
       'namaIbu': namaIbu,
       'namaWali': namaWali,
+      'alamat': alamat,
+      'alamat_siswa_id': alamatSiswaId,
+      'alamat_ortu_id': alamatOrtuId,
     };
   }
 
@@ -89,6 +102,9 @@ class Student {
       namaAyah: json['namaAyah'] ?? '',
       namaIbu: json['namaIbu'] ?? '',
       namaWali: json['namaWali'] ?? '',
+      alamat: json['alamat'] ?? '',
+      alamatOrtuId: json['alamat_ortu_id'],
+      alamatSiswaId: json['alamat_siswa_id'],
     );
   }
 }

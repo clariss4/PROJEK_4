@@ -1,55 +1,47 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../models/student.dart';
 
 class StudentCard extends StatelessWidget {
   final Student student;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  final VoidCallback onTap;
+  final VoidCallback? onEdit; // callback untuk edit
+  final VoidCallback? onDelete; // callback untuk delete
 
   const StudentCard({
     super.key,
     required this.student,
-    required this.onEdit,
-    required this.onDelete,
-    required this.onTap,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      margin: const EdgeInsets.all(8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 4,
       child: ListTile(
-        onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: Colors.blueAccent,
-          child: Text(
-            student.namaLengkap.isNotEmpty
-                ? student.namaLengkap[0].toUpperCase()
-                : '?',
-            style: const TextStyle(color: Colors.white),
-          ),
-        ),
+        leading: const Icon(Icons.person, color: Colors.blue),
         title: Text(
           student.namaLengkap,
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text('NISN: ${student.nisn}'),
+        subtitle: Text(student.nisn),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
+              icon: const Icon(Icons.edit, color: Colors.grey),
               onPressed: onEdit,
-              icon: const Icon(Icons.edit, color: Colors.blue),
             ),
             IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
               onPressed: onDelete,
-              icon: const Icon(Icons.delete, color: Colors.grey),
             ),
           ],
         ),
+        onTap: () {
+          // bisa navigasi ke detail page jika mau
+        },
       ),
     );
   }

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:uuid/uuid.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import '../models/student.dart';
+import '../models/wilayah_model.dart';
+import '../services/student_service.dart';
+import '../services/wilayah_service.dart';
 
 class FormPage extends StatefulWidget {
-  final Student? student;
+  final Student? student; // null = tambah baru
   const FormPage({super.key, this.student});
 
   @override
@@ -14,456 +15,262 @@ class FormPage extends StatefulWidget {
 
 class _FormPageState extends State<FormPage> {
   final _formKey = GlobalKey<FormState>();
-  final uuid = const Uuid();
-  final Map<String, TextEditingController> controllers = {
-    'nisn': TextEditingController(),
-    'namaLengkap': TextEditingController(),
-    'agama': TextEditingController(),
-    'tempatTanggalLahir': TextEditingController(),
-    'noTlp': TextEditingController(),
-    'nik': TextEditingController(),
-    'jalan': TextEditingController(),
-    'rtRw': TextEditingController(),
-    'dusun': TextEditingController(),
-    'desa': TextEditingController(),
-    'kecamatan': TextEditingController(),
-    'kabupaten': TextEditingController(),
-    'provinsi': TextEditingController(),
-    'kodePos': TextEditingController(),
-    'namaAyah': TextEditingController(),
-    'namaIbu': TextEditingController(),
-    'namaWali': TextEditingController(),
-    'alamat': TextEditingController(),
-  };
+  final StudentService _service = StudentService();
 
-  String? _selectedGender;
-  String? _selectedAlamatSiswaId;
-  String? _selectedAlamatOrtuId;
-  List<Map<String, dynamic>> _alamatList = [];
+  /* ---------- controller ---------- */
+  final nisnCtrl = TextEditingController();
+  final namaCtrl = TextEditingController();
+  final jkCtrl = TextEditingController();
+  final agamaCtrl = TextEditingController();
+  final tempatCtrl = TextEditingController();
+  final tglCtrl = TextEditingController();
+  final hpCtrl = TextEditingController();
+  final nikCtrl = TextEditingController();
+  final jalanCtrl = TextEditingController();
+  final rtRwCtrl = TextEditingController();
+  final dusunCtrl = TextEditingController();
+  final alamatCtrl = TextEditingController();
+  final ayahCtrl = TextEditingController();
+  final ibuCtrl = TextEditingController();
+  final waliCtrl = TextEditingController();
+  final alamatOrtuCtrl = TextEditingController();
+
+  Wilayah? _selectedWilayah;
+  bool _alamatOrtuSama = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.student != null) {
-      controllers.forEach((key, controller) {
-        controller.text = widget.student!.toJson()[key] ?? '';
-      });
-      _selectedGender = widget.student!.jenisKelamin;
-      _selectedAlamatSiswaId = widget.student!.alamatSiswaId;
-      _selectedAlamatOrtuId = widget.student!.alamatOrtuId;
-    }
-    _loadAlamat();
+    final s = widget.student;
+    nisnCtrl.text = s?.nisn ?? '';
+    namaCtrl.text = s?.namaLengkap ?? '';
+    jkCtrl.text = s?.jenisKelamin ?? '';
+    agamaCtrl.text = s?.agama ?? '';
+    tempatCtrl.text = s?.tempatLahir ?? '';
+    tglCtrl.text = s == null
+        ? ''
+        : s.tanggalLahir.toIso8601String().split('T')[0];
+    hpCtrl.text = s?.noTelp ?? '';
+    nikCtrl.text = s?.nik ?? '';
+    jalanCtrl.text = s?.jalan ?? '';
+    rtRwCtrl.text = s?.rtRw ?? '';
+    dusunCtrl.text = s?.dusun ?? '';
+    alamatCtrl.text = s?.alamatLengkap ?? '';
+    ayahCtrl.text = s?.namaAyah ?? '';
+    ibuCtrl.text = s?.namaIbu ?? '';
+    waliCtrl.text = s?.namaWali ?? '';
+    alamatOrtuCtrl.text = s?.alamatOrangTua ?? '';
+    _alamatOrtuSama = false;
   }
 
   @override
   void dispose() {
-    controllers.forEach((key, controller) => controller.dispose());
+    nisnCtrl.dispose();
+    namaCtrl.dispose();
+    jkCtrl.dispose();
+    agamaCtrl.dispose();
+    tempatCtrl.dispose();
+    tglCtrl.dispose();
+    hpCtrl.dispose();
+    nikCtrl.dispose();
+    jalanCtrl.dispose();
+    rtRwCtrl.dispose();
+    dusunCtrl.dispose();
+    alamatCtrl.dispose();
+    ayahCtrl.dispose();
+    ibuCtrl.dispose();
+    waliCtrl.dispose();
+    alamatOrtuCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _loadAlamat() async {
-    try {
-      final data = await Supabase.instance.client
-          .from('alamat')
-          .select()
-          .order('dusun');
-      setState(() {
-        _alamatList = List<Map<String, dynamic>>.from(data);
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gagal load alamat: $e')));
-    }
-  }
+  void _simpan() async {
+    /* ---------- debug ---------- */
+    debugPrint('1. validasi: ${_formKey.currentState!.validate()}');
+    debugPrint('2. selectedWilayah: $_selectedWilayah');
+    debugPrint('3. alamatCtrl: ${alamatCtrl.text}');
 
-  Future<void> _saveData() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedWilayah == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pilih dusun terlebih dahulu')),
+      );
+      return;
+    }
 
-    final Map<String, dynamic> newData = {
-      'id': widget.student?.id ?? uuid.v4(),
-      'nisn': controllers['nisn']!.text,
-      'namaLengkap': controllers['namaLengkap']!.text,
-      'jenisKelamin': _selectedGender,
-      'agama': controllers['agama']!.text,
-      'tempatTanggalLahir': controllers['tempatTanggalLahir']!.text,
-      'noTlp': controllers['noTlp']!.text,
-      'nik': controllers['nik']!.text,
-      'jalan': controllers['jalan']!.text,
-      'rtRw': controllers['rtRw']!.text,
-      'dusun': controllers['dusun']!.text,
-      'desa': controllers['desa']!.text,
-      'kecamatan': controllers['kecamatan']!.text,
-      'kabupaten': controllers['kabupaten']!.text,
-      'provinsi': controllers['provinsi']!.text,
-      'kodePos': controllers['kodePos']!.text,
-      'alamat_siswa_id': _selectedAlamatSiswaId,
-      'alamat_ortu_id': _selectedAlamatOrtuId,
-      'namaAyah': controllers['namaAyah']!.text,
-      'namaIbu': controllers['namaIbu']!.text,
-      'namaWali': controllers['namaWali']!.text,
-      'alamat': controllers['alamat']!.text,
-      'created_at': DateTime.now().toIso8601String(),
-    };
+    DateTime? tglLahir;
+    try {
+      tglLahir = DateTime.parse(tglCtrl.text);
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Format tanggal harus yyyy-MM-dd')),
+      );
+      return;
+    }
+
+    final student = Student(
+      id: widget.student?.id,
+      nisn: nisnCtrl.text,
+      namaLengkap: namaCtrl.text,
+      jenisKelamin: jkCtrl.text,
+      agama: agamaCtrl.text,
+      tempatLahir: tempatCtrl.text,
+      tanggalLahir: tglLahir,
+      noTelp: hpCtrl.text,
+      nik: nikCtrl.text,
+      jalan: jalanCtrl.text,
+      rtRw: rtRwCtrl.text,
+      dusun: _selectedWilayah!.dusun,
+      desa: _selectedWilayah!.desa,
+      kecamatan: _selectedWilayah!.kecamatan,
+      kabupaten: _selectedWilayah!.kabupaten,
+      provinsi: 'Jawa Timur',
+      kodePos: _selectedWilayah!.kodePos,
+      namaAyah: ayahCtrl.text,
+      namaIbu: ibuCtrl.text,
+      alamatOrangTua: alamatOrtuCtrl.text,
+      namaWali: waliCtrl.text,
+      alamatLengkap: alamatCtrl.text,
+    );
 
     try {
-      await Supabase.instance.client.from('student').upsert([newData]);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Data berhasil disimpan')));
-      Navigator.pop(context, true);
+      final berhasil = widget.student == null
+          ? await _service.insertStudent(student)
+          : await _service.updateStudent(student);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(berhasil ? 'Tersimpan' : 'Gagal menyimpan')),
+      );
+      if (berhasil) Navigator.pop(context, student);
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Gagal simpan: $e')));
+      ).showSnackBar(SnackBar(content: Text('Error saat simpan: $e')));
     }
   }
 
-  Widget _buildTextField(
-    String key,
+  Widget _textField(
     String label,
-    IconData icon, {
-    bool isNumber = false,
+    TextEditingController c, {
+    bool required = true,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: TextFormField(
-        controller: controllers[key],
-        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-        inputFormatters: isNumber
-            ? [FilteringTextInputFormatter.digitsOnly]
-            : [],
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon, color: Colors.blueAccent),
-          filled: true,
-          fillColor: Colors.blue.shade50,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-        ),
-        validator: (value) =>
-            value == null || value.isEmpty ? 'Wajib diisi' : null,
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.blueAccent,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAutocompleteField({
-    required String label,
-    required TextEditingController controller,
-    required List<Map<String, dynamic>> items,
-    required ValueChanged<Map<String, dynamic>> onSelected,
-    IconData? icon,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Autocomplete<Map<String, dynamic>>(
-        displayStringForOption: (option) => option['dusun'] ?? '',
-        optionsBuilder: (TextEditingValue textEditingValue) {
-          if (textEditingValue.text.isEmpty) {
-            return const Iterable<Map<String, dynamic>>.empty();
-          }
-          return items.where(
-            (item) => (item['dusun'] ?? '').toLowerCase().contains(
-              textEditingValue.text.toLowerCase(),
-            ),
-          );
-        },
-        fieldViewBuilder:
-            (context, textEditingController, focusNode, onFieldSubmitted) {
-              textEditingController.text = controller.text;
-              return TextFormField(
-                controller: textEditingController,
-                focusNode: focusNode,
-                decoration: InputDecoration(
-                  labelText: label,
-                  prefixIcon: icon != null
-                      ? Icon(icon, color: Colors.blueAccent)
-                      : null,
-                  filled: true,
-                  fillColor: Colors.blue.shade50,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Wajib diisi' : null,
-              );
-            },
-        onSelected: (selected) => onSelected(selected),
-      ),
+    return TextFormField(
+      controller: c,
+      decoration: InputDecoration(labelText: label),
+      validator: required
+          ? (v) => v!.isEmpty ? '$label wajib diisi' : null
+          : null,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFB3E5FC), Color(0xFFE1F5FE)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
+      appBar: AppBar(
+        title: Text(widget.student == null ? 'Tambah Siswa' : 'Edit Siswa'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
           child: Column(
             children: [
-              // AppBar
-              Container(
-                padding: const EdgeInsets.all(16),
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.lightBlueAccent,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(25),
-                    bottomRight: Radius.circular(25),
+              _textField('NISN', nisnCtrl),
+              _textField('Nama Lengkap', namaCtrl),
+              _textField('Jenis Kelamin', jkCtrl),
+              _textField('Agama', agamaCtrl),
+              _textField('Tempat Lahir', tempatCtrl),
+              _textField('Tanggal Lahir (yyyy-MM-dd)', tglCtrl),
+              _textField('No HP', hpCtrl, required: false),
+              _textField('NIK', nikCtrl, required: false),
+              _textField('Jalan', jalanCtrl),
+              _textField('RT/RW', rtRwCtrl),
+
+              /* ---------- AUTOCOMPLETE ALAMAT (v5.x) ---------- */
+              TypeAheadField<Wilayah>(
+                controller: alamatCtrl,
+                builder: (context, controller, focusNode) {
+                  return TextFormField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    decoration: const InputDecoration(
+                      labelText: 'Alamat Lengkap *',
+                      hintText: 'Ketik nama dusun...',
+                    ),
+                    validator: (_) =>
+                        _selectedWilayah == null ? 'Pilih dusun' : null,
+                  );
+                },
+                suggestionsCallback: (pattern) async {
+                  if (pattern.length < 2) return [];
+                  return await WilayahService.searchDusun(pattern);
+                },
+                itemBuilder: (_, Wilayah w) => ListTile(
+                  title: Text(w.dusun),
+                  subtitle: Text(
+                    '${w.desa}, Kec. ${w.kecamatan}, Kab. ${w.kabupaten}, ${w.kodePos}',
                   ),
                 ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          widget.student == null
-                              ? 'Tambah Data Siswa'
-                              : 'Edit Data Siswa',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 48),
-                  ],
+                onSelected: (w) {
+                  setState(() => _selectedWilayah = w);
+                  alamatCtrl.text =
+                      '${w.dusun}, Desa ${w.desa}, Kec. ${w.kecamatan}, Kab. ${w.kabupaten}, Jawa Timur ${w.kodePos}';
+                },
+                debounceDuration: const Duration(milliseconds: 400),
+                emptyBuilder: (_) =>
+                    const ListTile(title: Text('Dusun tidak ditemukan')),
+                loadingBuilder: (_) =>
+                    const ListTile(title: CircularProgressIndicator()),
+                errorBuilder: (_, e) => ListTile(
+                  title: Text(
+                    e.toString().contains('internet')
+                        ? 'Tidak ada koneksi internet'
+                        : 'Gagal terhubung ke database',
+                    style: const TextStyle(color: Colors.red),
+                  ),
                 ),
               ),
-              const SizedBox(height: 10),
 
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        // Data Diri
-                        Card(
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildSectionTitle('Data Diri'),
-                                _buildTextField(
-                                  'nisn',
-                                  'NISN',
-                                  Icons.badge,
-                                  isNumber: true,
-                                ),
-                                _buildTextField(
-                                  'namaLengkap',
-                                  'Nama Lengkap',
-                                  Icons.person,
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 12.0),
-                                  child: DropdownButtonFormField<String>(
-                                    value: _selectedGender,
-                                    decoration: InputDecoration(
-                                      labelText: 'Jenis Kelamin',
-                                      prefixIcon: const Icon(
-                                        Icons.wc,
-                                        color: Colors.blueAccent,
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.blue.shade50,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                    ),
-                                    items: const [
-                                      DropdownMenuItem(
-                                        value: 'Laki-laki',
-                                        child: Text('Laki-laki'),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'Perempuan',
-                                        child: Text('Perempuan'),
-                                      ),
-                                    ],
-                                    onChanged: (value) =>
-                                        setState(() => _selectedGender = value),
-                                    validator: (value) => value == null
-                                        ? 'Pilih jenis kelamin'
-                                        : null,
-                                  ),
-                                ),
-                                _buildTextField(
-                                  'agama',
-                                  'Agama',
-                                  Icons.account_balance,
-                                ),
-                                _buildTextField(
-                                  'tempatTanggalLahir',
-                                  'Tempat, Tanggal Lahir',
-                                  Icons.calendar_today,
-                                ),
-                                _buildTextField(
-                                  'noTlp',
-                                  'No. Telepon / HP',
-                                  Icons.phone,
-                                  isNumber: true,
-                                ),
-                                _buildTextField(
-                                  'nik',
-                                  'NIK',
-                                  Icons.credit_card,
-                                  isNumber: true,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+              /* ---------- ORANG TUA ---------- */
+              const SizedBox(height: 16),
+              const Text(
+                'Data Orang Tua',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              _textField('Nama Ayah', ayahCtrl),
+              _textField('Nama Ibu', ibuCtrl),
+              _textField('Nama Wali (opsional)', waliCtrl, required: false),
 
-                        // Alamat
-                        Card(
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildSectionTitle('Alamat'),
-                                _buildTextField('jalan', 'Jalan', Icons.map),
-                                _buildTextField('rtRw', 'RT/RW', Icons.home),
-                                _buildAutocompleteField(
-                                  label: 'Dusun Siswa',
-                                  controller: controllers['dusun']!,
-                                  items: _alamatList,
-                                  icon: Icons.location_city,
-                                  onSelected: (selected) {
-                                    controllers['dusun']!.text =
-                                        selected['dusun'] ?? '';
-                                    controllers['desa']!.text =
-                                        selected['desa'] ?? '';
-                                    controllers['kecamatan']!.text =
-                                        selected['kecamatan'] ?? '';
-                                    controllers['kabupaten']!.text =
-                                        selected['kabupaten'] ?? '';
-                                    controllers['provinsi']!.text =
-                                        selected['provinsi'] ?? '';
-                                    controllers['kodePos']!.text =
-                                        selected['kode_pos'] ?? '';
-                                    _selectedAlamatSiswaId = selected['id'];
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        // Orang Tua / Wali
-                        Card(
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildSectionTitle('Orang Tua / Wali'),
-                                _buildTextField(
-                                  'namaAyah',
-                                  'Nama Ayah',
-                                  Icons.man,
-                                ),
-                                _buildTextField(
-                                  'namaIbu',
-                                  'Nama Ibu',
-                                  Icons.woman,
-                                ),
-                                _buildTextField(
-                                  'namaWali',
-                                  'Nama Wali',
-                                  Icons.group,
-                                ),
-                                _buildAutocompleteField(
-                                  label: 'Dusun Wali',
-                                  controller: controllers['alamat']!,
-                                  items: _alamatList,
-                                  icon: Icons.home,
-                                  onSelected: (selected) {
-                                    controllers['alamat']!.text =
-                                        '${selected['dusun']}, ${selected['desa']}, ${selected['kecamatan']}, ${selected['kabupaten']}, ${selected['provinsi']}';
-                                    _selectedAlamatOrtuId = selected['id'];
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blueAccent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: _saveData,
-                            child: const Text(
-                              'Simpan',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+              Row(
+                children: [
+                  const Text('Alamat ortu sama dengan siswa'),
+                  const Spacer(),
+                  Switch(
+                    value: _alamatOrtuSama,
+                    onChanged: (val) {
+                      setState(() => _alamatOrtuSama = val);
+                      if (val) alamatOrtuCtrl.text = alamatCtrl.text;
+                    },
                   ),
+                ],
+              ),
+              TextFormField(
+                controller: alamatOrtuCtrl,
+                readOnly: _alamatOrtuSama,
+                decoration: const InputDecoration(
+                  labelText: 'Alamat Orang Tua',
+                  hintText: 'Isi manual atau samakan',
+                ),
+                validator: (v) => v!.isEmpty ? 'Alamat ortu wajib diisi' : null,
+              ),
+
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _simpan,
+                  child: const Text('SIMPAN'),
                 ),
               ),
             ],

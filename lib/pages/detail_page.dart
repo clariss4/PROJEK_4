@@ -1,145 +1,138 @@
 import 'package:flutter/material.dart';
 import '../models/student.dart';
+import '../pages/form_page.dart';
 
 class DetailPage extends StatelessWidget {
   final Student student;
-
   const DetailPage({super.key, required this.student});
 
-  Widget _buildDetail(String label, String value, {IconData? icon}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (icon != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 8.0, top: 2),
-              child: Icon(icon, size: 20, color: Colors.blueAccent),
-            ),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                text: "$label: ",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                  fontSize: 16,
-                ),
-                children: [
-                  TextSpan(
-                    text: value,
-                    style: const TextStyle(fontWeight: FontWeight.normal),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSection(String title, List<Widget> children) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Padding(
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Detail Siswa'), elevation: 0),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.blueAccent,
+            // Foto dummy (boleh dihapus jika tidak pakai)
+            Center(
+              child: CircleAvatar(
+                radius: 60,
+                backgroundColor: Colors.blue.shade100,
+                child: const Icon(Icons.person, size: 60, color: Colors.blue),
               ),
             ),
-            const SizedBox(height: 8),
-            ...children,
+            const SizedBox(height: 20),
+
+            // Judul
+            Center(
+              child: Text(
+                student.namaLengkap,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Center(
+              child: Text(
+                student.nisn,
+                style: const TextStyle(color: Colors.grey),
+              ),
+            ),
+            const Divider(height: 40, thickness: 1),
+
+            // Data Pribadi
+            _section('Data Pribadi'),
+            _row('NISN', student.nisn),
+            _row('Jenis Kelamin', student.jenisKelamin),
+            _row('Agama', student.agama),
+            _row(
+              'Tempat / Tgl Lahir',
+              '${student.tempatLahir}, ${student.tanggalLahir.toLocal().toString().split(' ')[0]}',
+            ),
+            _row('NIK', student.nik),
+            _row('No HP', student.noTelp),
+
+            const SizedBox(height: 16),
+
+            // Alamat
+            _section('Alamat'),
+            _row('Jalan', student.jalan),
+            _row('RT/RW', student.rtRw),
+            _row('Dusun', student.dusun),
+            _row('Desa', student.desa),
+            _row('Kecamatan', student.kecamatan),
+            _row('Kabupaten', student.kabupaten),
+            _row('Provinsi', student.provinsi),
+            _row('Kode Pos', student.kodePos),
+
+            const SizedBox(height: 16),
+
+            // Orang Tua
+            _section('Data Orang Tua'),
+            _row('Nama Ayah', student.namaAyah),
+            _row('Nama Ibu', student.namaIbu),
+            _row('Alamat Ortu', student.alamatOrangTua),
+
+            const SizedBox(height: 24),
+
+            // Tombol Edit (opsional)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.edit),
+                label: const Text('Edit Data'),
+                onPressed: () async {
+                  // Buka form edit & terima hasil
+                  final updated = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => FormPage(student: student),
+                    ),
+                  );
+                  if (updated != null) {
+                    // Kembali ke halaman sebelumnya & kirim data baru
+                    Navigator.pop(context, updated);
+                  }
+                },
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail Siswa'),
-        backgroundColor: Colors.lightBlueAccent,
+  Widget _section(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFB3E5FC), Color(0xFFE1F5FE)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: ListView(
-            children: [
-              _buildSection('Data Diri', [
-                _buildDetail('NISN', student.nisn, icon: Icons.badge),
-                _buildDetail(
-                  'Nama Lengkap',
-                  student.namaLengkap,
-                  icon: Icons.person,
-                ),
-                _buildDetail(
-                  'Jenis Kelamin',
-                  student.jenisKelamin,
-                  icon: Icons.wc,
-                ),
-                _buildDetail(
-                  'Agama',
-                  student.agama,
-                  icon: Icons.account_balance,
-                ),
-                _buildDetail(
-                  'TTL',
-                  student.tempatTanggalLahir,
-                  icon: Icons.calendar_today,
-                ),
-                _buildDetail('No. Telepon', student.noTlp, icon: Icons.phone),
-                _buildDetail('NIK', student.nik, icon: Icons.credit_card),
-              ]),
-              _buildSection('Alamat', [
-                _buildDetail('Jalan', student.jalan, icon: Icons.map),
-                _buildDetail('RT/RW', student.rtRw, icon: Icons.home),
-                _buildDetail('Dusun', student.dusun, icon: Icons.location_city),
-                _buildDetail('Desa', student.desa, icon: Icons.location_on),
-                _buildDetail(
-                  'Kecamatan',
-                  student.kecamatan,
-                  icon: Icons.maps_home_work,
-                ),
-                _buildDetail(
-                  'Kabupaten',
-                  student.kabupaten,
-                  icon: Icons.apartment,
-                ),
-                _buildDetail('Provinsi', student.provinsi, icon: Icons.flag),
-                _buildDetail(
-                  'Kode Pos',
-                  student.kodePos,
-                  icon: Icons.markunread_mailbox,
-                ),
-              ]),
-              _buildSection('Orang Tua / Wali', [
-                _buildDetail('Nama Ayah', student.namaAyah, icon: Icons.man),
-                _buildDetail('Nama Ibu', student.namaIbu, icon: Icons.woman),
-                _buildDetail('Nama Wali', student.namaWali, icon: Icons.group),
-                _buildDetail('Alamat', student.agama, icon: Icons.home),
-              ]),
-            ],
-          ),
+    );
+  }
+
+  Widget _row(String label, String value) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 120,
+              child: Text(
+                label,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(value.isEmpty ? '-' : value)),
+          ],
         ),
       ),
     );

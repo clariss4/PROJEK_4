@@ -1,14 +1,15 @@
-// lib/models/student.dart
+import 'package:intl/intl.dart';
+
 class Student {
-  final String id;
+  String? id;
   final String nisn;
   final String namaLengkap;
   final String jenisKelamin;
   final String agama;
-  final String tempatTanggalLahir;
-  final String noTlp;
+  final String tempatLahir;
+  final DateTime tanggalLahir;
+  final String noTelp;
   final String nik;
-
   final String jalan;
   final String rtRw;
   final String dusun;
@@ -17,23 +18,21 @@ class Student {
   final String kabupaten;
   final String provinsi;
   final String kodePos;
-
   final String namaAyah;
   final String namaIbu;
+  final String alamatOrangTua;
   final String namaWali;
-  final String alamat;
-
-  final String? alamatSiswaId;
-  final String? alamatOrtuId;
+  final String alamatLengkap;
 
   Student({
-    required this.id,
+    this.id,
     required this.nisn,
     required this.namaLengkap,
     required this.jenisKelamin,
     required this.agama,
-    required this.tempatTanggalLahir,
-    required this.noTlp,
+    required this.tempatLahir,
+    required this.tanggalLahir,
+    required this.noTelp,
     required this.nik,
     required this.jalan,
     required this.rtRw,
@@ -45,66 +44,61 @@ class Student {
     required this.kodePos,
     required this.namaAyah,
     required this.namaIbu,
+    required this.alamatOrangTua,
     required this.namaWali,
-    required this.alamat,
-
-    this.alamatOrtuId,
-    this.alamatSiswaId,
+    required this.alamatLengkap,
   });
 
-  /// Ubah object Student menjadi Map<String, dynamic>
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'nisn': nisn,
-      'namaLengkap': namaLengkap,
-      'jenisKelamin': jenisKelamin,
+      'nama_lengkap': namaLengkap,
+      'jenis_kelamin': jenisKelamin,
       'agama': agama,
-      'tempatTanggalLahir': tempatTanggalLahir,
-      'noTlp': noTlp,
+      'tempat': tempatLahir,
+      'tanggal_lahir': DateFormat('yyyy-MM-dd').format(tanggalLahir),
+      'no_hp': noTelp,
       'nik': nik,
-      'jalan': jalan,
-      'rtRw': rtRw,
+      'alamat_jalan': jalan,
+      'rt_rw': rtRw,
       'dusun': dusun,
-      'desa': desa,
-      'kecamatan': kecamatan,
-      'kabupaten': kabupaten,
-      'provinsi': provinsi,
-      'kodePos': kodePos,
-      'namaAyah': namaAyah,
-      'namaIbu': namaIbu,
-      'namaWali': namaWali,
-      'alamat': alamat,
-      'alamat_siswa_id': alamatSiswaId,
-      'alamat_ortu_id': alamatOrtuId,
+      'desa': '',
+      'kecamatan': '',
+      'kabupaten': '',
+      'provinsi': '',
+      'kode_pos': '',
+      'nama_ayah': namaAyah,
+      'nama_ibu': namaIbu,
+      'alamat_orang_tua': alamatOrangTua,
+      'nama_wali': '',
+      'alamat_lengkap': '',
     };
   }
 
-  /// Buat object Student dari Map<String, dynamic>
-  factory Student.fromJson(Map<String, dynamic> json) {
+  factory Student.fromMap(Map<String, dynamic> map) {
     return Student(
-      id: json['id'] ?? '',
-      nisn: json['nisn'] ?? '',
-      namaLengkap: json['namaLengkap'] ?? '',
-      jenisKelamin: json['jenisKelamin'] ?? '',
-      agama: json['agama'] ?? '',
-      tempatTanggalLahir: json['tempatTanggalLahir'] ?? '',
-      noTlp: json['noTlp'] ?? '',
-      nik: json['nik'] ?? '',
-      jalan: json['jalan'] ?? '',
-      rtRw: json['rtRw'] ?? '',
-      dusun: json['dusun'] ?? '',
-      desa: json['desa'] ?? '',
-      kecamatan: json['kecamatan'] ?? '',
-      kabupaten: json['kabupaten'] ?? '',
-      provinsi: json['provinsi'] ?? '',
-      kodePos: json['kodePos'] ?? '',
-      namaAyah: json['namaAyah'] ?? '',
-      namaIbu: json['namaIbu'] ?? '',
-      namaWali: json['namaWali'] ?? '',
-      alamat: json['alamat'] ?? '',
-      alamatOrtuId: json['alamat_ortu_id'],
-      alamatSiswaId: json['alamat_siswa_id'],
+      id: map['id']?.toString(),
+      nisn: map['nisn'],
+      namaLengkap: map['nama_lengkap'],
+      jenisKelamin: map['jenis_kelamin'],
+      agama: map['agama'],
+      tempatLahir: map['tempat'],
+      tanggalLahir: DateTime.parse(map['tanggal_lahir']),
+      noTelp: map['no_hp'] ?? '',
+      nik: map['nik'] ?? '',
+      jalan: map['alamat_jalan'] ?? '',
+      rtRw: map['rt_rw'] ?? '',
+      dusun: map['dusun'] ?? '',
+      desa: map['desa'] ?? '',
+      kecamatan: map['kecamatan'] ?? '',
+      kabupaten: map['kabupaten'] ?? '',
+      provinsi: map['provinsi'] ?? '',
+      kodePos: map['kode_pos'] ?? '',
+      namaAyah: map['nama_ayah'] ?? '',
+      namaIbu: map['nama_ibu'] ?? '',
+      alamatOrangTua: map['alamat_orang_tua'] ?? '',
+      namaWali: map['nama_wali'] ?? '',
+      alamatLengkap: map['alamat_lengkap'] ?? '',
     );
   }
 }

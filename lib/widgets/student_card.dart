@@ -5,12 +5,14 @@ class StudentCard extends StatelessWidget {
   final Student student;
   final VoidCallback? onEdit; // callback untuk edit
   final VoidCallback? onDelete; // callback untuk delete
+  final VoidCallback? onTap; //pindah ke detail page
 
   const StudentCard({
     super.key,
     required this.student,
     this.onEdit,
     this.onDelete,
+    this.onTap,
   });
 
   @override
@@ -26,22 +28,22 @@ class StudentCard extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Text(student.nisn),
+        onTap: onTap,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
+              //edit
               icon: const Icon(Icons.edit, color: Colors.grey),
               onPressed: onEdit,
             ),
             IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
+              //delete
+              icon: const Icon(Icons.delete, color: Colors.blueAccent),
               onPressed: onDelete,
             ),
           ],
         ),
-        onTap: () {
-          // bisa navigasi ke detail page jika mau
-        },
       ),
     );
   }

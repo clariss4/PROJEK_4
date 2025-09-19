@@ -1,104 +1,122 @@
+// models/student.dart
 import 'package:intl/intl.dart';
 
 class Student {
-  String? id;
+  final String id;
   final String nisn;
   final String namaLengkap;
   final String jenisKelamin;
   final String agama;
-  final String tempatLahir;
-  final DateTime tanggalLahir;
-  final String noTelp;
+  final String ttl;
+  final String telp;
   final String nik;
   final String jalan;
   final String rtRw;
-  final String dusun;
-  final String desa;
-  final String kecamatan;
-  final String kabupaten;
-  final String provinsi;
-  final String kodePos;
-  final String namaAyah;
-  final String namaIbu;
-  final String alamatOrangTua;
-  final String namaWali;
-  final String alamatLengkap;
+  final String? dusun;
+  final String? desa;
+  final String? kecamatan;
+  final String? kabupaten;
+  final String? provinsi;
+  final String? kodePos;
+
+  // Data orang tua
+  final String? namaAyah;
+  final String? namaIbu;
+  final String? alamatOrangTua;
+
+  // Foreign-key (dipakai service saat insert/update)
+  final String? alamatId;
+  final String? orangTuaId;
+  final String? waliId;
 
   Student({
-    this.id,
+    required this.id,
     required this.nisn,
     required this.namaLengkap,
     required this.jenisKelamin,
     required this.agama,
-    required this.tempatLahir,
-    required this.tanggalLahir,
-    required this.noTelp,
+    required this.ttl,
+    required this.telp,
     required this.nik,
     required this.jalan,
     required this.rtRw,
-    required this.dusun,
-    required this.desa,
-    required this.kecamatan,
-    required this.kabupaten,
-    required this.provinsi,
-    required this.kodePos,
-    required this.namaAyah,
-    required this.namaIbu,
-    required this.alamatOrangTua,
-    required this.namaWali,
-    required this.alamatLengkap,
+    this.dusun,
+    this.desa,
+    this.kecamatan,
+    this.kabupaten,
+    this.provinsi,
+    this.kodePos,
+    this.namaAyah,
+    this.namaIbu,
+    this.alamatOrangTua,
+    this.alamatId,
+    this.orangTuaId,
+    this.waliId,
   });
 
+  /* ---------- getter helper (tetap ada) ---------- */
+  String? get tempatLahir {
+    final potong = ttl.split(', ');
+    return potong.length == 2 ? potong[0] : null;
+  }
+
+  DateTime? get tanggalLahir {
+    final potong = ttl.split(', ');
+    if (potong.length != 2) return null;
+    try {
+      return DateFormat('dd-MM-yyyy').parse(potong[1]);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String? get noTelp => telp;
+
+  /* ---------- fromJson (untuk read) ---------- */
+  factory Student.fromJson(Map<String, dynamic> json) => Student(
+    id: json['id'],
+    nisn: json['nisn'],
+    namaLengkap: json['nama_lengkap'],
+    jenisKelamin: json['jenis_kelamin'],
+    agama: json['agama'],
+    ttl: json['ttl'],
+    telp: json['telp'],
+    nik: json['nik'],
+    jalan: json['jalan'],
+    rtRw: json['rtrw'],
+    dusun: json['dusun'],
+    desa: json['desa'],
+    kecamatan: json['kecamatan'],
+    kabupaten: json['kabupaten'],
+    provinsi: json['provinsi'],
+    kodePos: json['kodepos'],
+    namaAyah: json['nama_ayah'],
+    namaIbu: json['nama_ibu'],
+    alamatOrangTua: json['alamat_ortu'],
+    alamatId: json['alamat_id']?.toString(),
+    orangTuaId: json['orang_tua_id']?.toString(),
+    waliId: json['wali_id']?.toString(),
+  );
+
+  /* ---------- fromMap (alias) ---------- */
+  factory Student.fromMap(Map<String, dynamic> map) => Student.fromJson(map);
+
+  /* ---------- toMap (untuk insert/update) ---------- */
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'nisn': nisn,
       'nama_lengkap': namaLengkap,
       'jenis_kelamin': jenisKelamin,
       'agama': agama,
-      'tempat': tempatLahir,
-      'tanggal_lahir': DateFormat('yyyy-MM-dd').format(tanggalLahir),
-      'no_hp': noTelp,
+      'ttl': ttl,
+      'telp': telp,
       'nik': nik,
-      'alamat_jalan': jalan,
-      'rt_rw': rtRw,
-      'dusun': dusun,
-      'desa': '',
-      'kecamatan': '',
-      'kabupaten': '',
-      'provinsi': '',
-      'kode_pos': '',
-      'nama_ayah': namaAyah,
-      'nama_ibu': namaIbu,
-      'alamat_orang_tua': alamatOrangTua,
-      'nama_wali': '',
-      'alamat_lengkap': '',
+      'jalan': jalan,
+      'rtrw': rtRw,
+      'alamat_id': alamatId == null ? null : int.tryParse(alamatId!),
+      'orang_tua_id': orangTuaId,
+      'wali_id': waliId,
     };
-  }
-
-  factory Student.fromMap(Map<String, dynamic> map) {
-    return Student(
-      id: map['id']?.toString(),
-      nisn: map['nisn'],
-      namaLengkap: map['nama_lengkap'],
-      jenisKelamin: map['jenis_kelamin'],
-      agama: map['agama'],
-      tempatLahir: map['tempat'],
-      tanggalLahir: DateTime.parse(map['tanggal_lahir']),
-      noTelp: map['no_hp'] ?? '',
-      nik: map['nik'] ?? '',
-      jalan: map['alamat_jalan'] ?? '',
-      rtRw: map['rt_rw'] ?? '',
-      dusun: map['dusun'] ?? '',
-      desa: map['desa'] ?? '',
-      kecamatan: map['kecamatan'] ?? '',
-      kabupaten: map['kabupaten'] ?? '',
-      provinsi: map['provinsi'] ?? '',
-      kodePos: map['kode_pos'] ?? '',
-      namaAyah: map['nama_ayah'] ?? '',
-      namaIbu: map['nama_ibu'] ?? '',
-      alamatOrangTua: map['alamat_orang_tua'] ?? '',
-      namaWali: map['nama_wali'] ?? '',
-      alamatLengkap: map['alamat_lengkap'] ?? '',
-    );
   }
 }

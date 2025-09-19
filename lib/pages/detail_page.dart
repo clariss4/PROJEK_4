@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/student.dart';
-import '../pages/form_page.dart';
+import 'form_page.dart';
 
 class DetailPage extends StatelessWidget {
   final Student student;
@@ -15,7 +16,6 @@ class DetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Foto dummy (boleh dihapus jika tidak pakai)
             Center(
               child: CircleAvatar(
                 radius: 60,
@@ -24,8 +24,6 @@ class DetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Judul
             Center(
               child: Text(
                 student.namaLengkap,
@@ -43,21 +41,19 @@ class DetailPage extends StatelessWidget {
             ),
             const Divider(height: 40, thickness: 1),
 
-            // Data Pribadi
+            /* ---------- Data Pribadi ---------- */
             _section('Data Pribadi'),
             _row('NISN', student.nisn),
             _row('Jenis Kelamin', student.jenisKelamin),
             _row('Agama', student.agama),
             _row(
               'Tempat / Tgl Lahir',
-              '${student.tempatLahir}, ${student.tanggalLahir.toLocal().toString().split(' ')[0]}',
+              '${student.tempatLahir ?? '-'}, ${student.tanggalLahir != null ? DateFormat('dd-MM-yyyy').format(student.tanggalLahir!) : '-'}',
             ),
             _row('NIK', student.nik),
             _row('No HP', student.noTelp),
 
-            const SizedBox(height: 16),
-
-            // Alamat
+            /* ---------- Alamat Lengkap ---------- */
             _section('Alamat'),
             _row('Jalan', student.jalan),
             _row('RT/RW', student.rtRw),
@@ -68,34 +64,26 @@ class DetailPage extends StatelessWidget {
             _row('Provinsi', student.provinsi),
             _row('Kode Pos', student.kodePos),
 
-            const SizedBox(height: 16),
-
-            // Orang Tua
+            /* ---------- Orang Tua ---------- */
             _section('Data Orang Tua'),
             _row('Nama Ayah', student.namaAyah),
             _row('Nama Ibu', student.namaIbu),
             _row('Alamat Ortu', student.alamatOrangTua),
 
             const SizedBox(height: 24),
-
-            // Tombol Edit (opsional)
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.edit),
                 label: const Text('Edit Data'),
                 onPressed: () async {
-                  // Buka form edit & terima hasil
                   final updated = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => FormPage(student: student),
                     ),
                   );
-                  if (updated != null) {
-                    // Kembali ke halaman sebelumnya & kirim data baru
-                    Navigator.pop(context, updated);
-                  }
+                  if (updated != null) Navigator.pop(context, updated);
                 },
               ),
             ),
@@ -115,7 +103,8 @@ class DetailPage extends StatelessWidget {
     );
   }
 
-  Widget _row(String label, String value) {
+  Widget _row(String label, String? value) {
+    final displayValue = value ?? '-';
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
@@ -131,7 +120,7 @@ class DetailPage extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            Expanded(child: Text(value.isEmpty ? '-' : value)),
+            Expanded(child: Text(displayValue.isEmpty ? '-' : displayValue)),
           ],
         ),
       ),

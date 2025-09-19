@@ -1,12 +1,29 @@
 class Wilayah {
-  final String dusunId; // String (sudah ::text di view)
-  final String dusun, desa, kecamatan, kabupaten, kodePos;
+  final String id;
+  final String dusun;
+  final String desa;
+  final String kecamatan;
+  final String kabupaten;
+  final String? provinsi;
+  final String kodepos;
 
-  Wilayah.fromJson(Map<String, dynamic> json)
-    : dusunId = json['dusun_id'].toString(),
-      dusun = json['dusun'],
-      desa = json['desa'],
-      kecamatan = json['kecamatan'],
-      kabupaten = json['kabupaten'],
-      kodePos = json['kode_pos'];
+  Wilayah({
+    required this.id,
+    required this.dusun,
+    required this.desa,
+    required this.kecamatan,
+    required this.kabupaten,
+    this.provinsi,
+    required this.kodepos,
+  });
+
+  factory Wilayah.fromJson(Map<String, dynamic> json) => Wilayah(
+    id: json['id'].toString(),
+    dusun: json['dusun'] ?? '',
+    desa: json['desa'] ?? '',
+    kecamatan: json['kecamatan'] ?? '',
+    kabupaten: json['kabupaten'] ?? '',
+    provinsi: json['provinsi'],
+    kodepos: json['kodepos']?.toString() ?? '',
+  );
 }

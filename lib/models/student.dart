@@ -64,7 +64,7 @@ class Student {
     final potong = ttl.split(', ');
     if (potong.length != 2) return null;
     try {
-      return DateFormat('dd-MM-yyyy').parse(potong[1]);
+      return DateFormat('dd-MM-yyyy').parse(potong[1]); //tanggal lahir
     } catch (_) {
       return null;
     }

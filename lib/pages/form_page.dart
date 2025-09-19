@@ -16,6 +16,8 @@ class FormPage extends StatefulWidget {
 
   @override
   State<FormPage> createState() => _FormPageState();
+
+  static of(BuildContext context) {}
 }
 
 class _FormPageState extends State<FormPage> {

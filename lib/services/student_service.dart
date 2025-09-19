@@ -5,6 +5,7 @@ import 'exception.dart';
 
 final _client = Supabase.instance.client;
 
+//termasuk supabase
 class StudentService {
   /// Ambil semua siswa + alamat + orang tua
   Future<List<Student>> getAllStudents() async {

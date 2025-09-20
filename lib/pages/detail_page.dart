@@ -10,7 +10,29 @@ class DetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Detail Siswa'), elevation: 0),
+      extendBodyBehindAppBar: false,
+      appBar: AppBar(
+        toolbarHeight: 80,
+        elevation: 0,
+        title: const Text(
+          'Detail Siswa',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        centerTitle: true,
+        foregroundColor: Colors.white,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color.fromARGB(255, 82, 156, 230),
+                Color.fromARGB(255, 74, 167, 243),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -18,9 +40,13 @@ class DetailPage extends StatelessWidget {
           children: [
             Center(
               child: CircleAvatar(
-                radius: 60,
-                backgroundColor: Colors.blue.shade100,
-                child: const Icon(Icons.person, size: 60, color: Colors.blue),
+                radius: 70,
+                backgroundColor: Colors.white,
+                child: CircleAvatar(
+                  radius: 64,
+                  backgroundColor: Colors.blue.shade100,
+                  child: const Icon(Icons.person, size: 70, color: Colors.blue),
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -28,7 +54,7 @@ class DetailPage extends StatelessWidget {
               child: Text(
                 student.namaLengkap,
                 style: const TextStyle(
-                  fontSize: 24,
+                  fontSize: 26,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -39,7 +65,7 @@ class DetailPage extends StatelessWidget {
                 style: const TextStyle(color: Colors.grey),
               ),
             ),
-            const Divider(height: 40, thickness: 1),
+            const Divider(height: 40, thickness: 2, color: Color(0xFF1976D2)),
 
             /* ---------- Data Pribadi ---------- */
             _section('Data Pribadi'),
@@ -76,6 +102,14 @@ class DetailPage extends StatelessWidget {
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.edit),
                 label: const Text('Edit Data'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  backgroundColor: const Color(0xFF1976D2),
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: () async {
                   final updated = await Navigator.push(
                     context,
@@ -98,7 +132,11 @@ class DetailPage extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF0D47A1),
+        ),
       ),
     );
   }
@@ -107,6 +145,8 @@ class DetailPage extends StatelessWidget {
     final displayValue = value ?? '-';
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
@@ -116,7 +156,7 @@ class DetailPage extends StatelessWidget {
               width: 120,
               child: Text(
                 label,
-                style: const TextStyle(fontWeight: FontWeight.w500),
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
             const SizedBox(width: 12),

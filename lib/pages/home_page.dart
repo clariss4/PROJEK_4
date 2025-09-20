@@ -59,15 +59,25 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
+      backgroundColor: const Color.fromARGB(255, 231, 238, 241),
       appBar: AppBar(
+        toolbarHeight: 80,
         title: const Text(
-          'Daftar Siswa',
+          'Data Siswa SMK',
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.indigo,
+        foregroundColor: const Color.fromARGB(255, 255, 255, 255),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color.fromARGB(255, 86, 164, 241), Color(0xFF42A5F5)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: _isLoading
           ? _shimmerLoader()
@@ -78,7 +88,7 @@ class _HomePageState extends State<HomePage> {
         onPressed: _onAddTap,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Tambah Siswa'),
-        backgroundColor: Colors.indigo,
+        backgroundColor: const Color.fromARGB(255, 81, 130, 204),
         foregroundColor: Colors.white,
         extendedPadding: const EdgeInsets.symmetric(horizontal: 24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),

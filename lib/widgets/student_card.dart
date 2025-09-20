@@ -17,7 +17,16 @@ class StudentCard extends StatelessWidget {
 
   /* ---------- Helper ---------- */
   Color _avatarColor(String name) {
-    return Colors.primaries[name.hashCode % Colors.primaries.length];
+    // palet netral & pastel
+    final colors = [
+      Colors.teal.shade200,
+      Colors.amber.shade300,
+      Colors.pink.shade200,
+      Colors.green.shade200,
+      Colors.orange.shade200,
+      Colors.purple.shade200,
+    ];
+    return colors[name.hashCode % colors.length];
   }
 
   String _initials(String name) {
@@ -34,40 +43,31 @@ class StudentCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
-          splashColor: Colors.white.withOpacity(.2),
-          child: Ink(
+          borderRadius: BorderRadius.circular(20),
+          splashColor: Colors.grey.shade200,
+          child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              gradient: LinearGradient(
-                colors: [Colors.blue.shade50, Colors.white],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.grey.shade50, // netral
               boxShadow: [
                 BoxShadow(
-                  color: Colors.blue.withOpacity(.15),
+                  color: Colors.grey.shade300.withOpacity(.25),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
               ],
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               child: Row(
                 children: [
-                  /* ---------- Avatar Gradient ---------- */
+                  /* ---------- Avatar ---------- */
                   Container(
-                    width: 56,
-                    height: 56,
+                    width: 52,
+                    height: 52,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [
-                          _avatarColor(student.namaLengkap),
-                          _avatarColor(student.namaLengkap).withOpacity(.7),
-                        ],
-                      ),
+                      color: _avatarColor(student.namaLengkap),
                     ),
                     child: Center(
                       child: Text(
@@ -75,12 +75,12 @@ class StudentCard extends StatelessWidget {
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 22,
+                          fontSize: 20,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 14),
 
                   /* ---------- Nama & NISN ---------- */
                   Expanded(
@@ -90,16 +90,16 @@ class StudentCard extends StatelessWidget {
                         Text(
                           student.namaLengkap,
                           style: const TextStyle(
-                            fontSize: 18,
+                            fontSize: 17,
                             fontWeight: FontWeight.w600,
                             color: Colors.black87,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           student.nisn,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             color: Colors.grey.shade600,
                           ),
                         ),
@@ -107,28 +107,20 @@ class StudentCard extends StatelessWidget {
                     ),
                   ),
 
-                  /* ---------- Tombol Aksi ---------- */
+                  /* ---------- Tombol Aksi (rounded) ---------- */
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      /* Edit */
-                      IconButton(
-                        icon: const Icon(
-                          Icons.edit_rounded,
-                          color: Colors.indigo,
-                        ),
-                        onPressed: onEdit,
-                        splashRadius: 24,
+                      _circleIcon(
+                        icon: Icons.edit_rounded,
+                        color: Colors.teal,
+                        onTap: onEdit,
                       ),
-                      const SizedBox(width: 4),
-                      /* Delete */
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete_rounded,
-                          color: Colors.redAccent,
-                        ),
-                        onPressed: onDelete,
-                        splashRadius: 24,
+                      const SizedBox(width: 8),
+                      _circleIcon(
+                        icon: Icons.delete_rounded,
+                        color: Colors.redAccent,
+                        onTap: onDelete,
                       ),
                     ],
                   ),
@@ -136,6 +128,26 @@ class StudentCard extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _circleIcon({
+    required IconData icon,
+    required Color color,
+    VoidCallback? onTap,
+  }) {
+    return Material(
+      color: color.withOpacity(.12),
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        splashColor: color.withOpacity(.25),
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, size: 20, color: color),
         ),
       ),
     );

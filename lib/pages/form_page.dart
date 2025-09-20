@@ -16,8 +16,6 @@ class FormPage extends StatefulWidget {
 
   @override
   State<FormPage> createState() => _FormPageState();
-
-  static of(BuildContext context) {}
 }
 
 class _FormPageState extends State<FormPage> {
@@ -34,23 +32,22 @@ class _FormPageState extends State<FormPage> {
   final jalanCtrl = TextEditingController();
   final rtrwCtrl = TextEditingController();
   final agamaCtrl = TextEditingController();
-  final alamatSiswaCtrl = TextEditingController(); // 1 kolom saja
+  final alamatSiswaCtrl = TextEditingController();
 
   /* ---------- Orang Tua ---------- */
   final namaAyahCtrl = TextEditingController();
   final namaIbuCtrl = TextEditingController();
-  final alamatOrtuCtrl = TextEditingController(); // 1 kolom saja
+  final alamatOrtuCtrl = TextEditingController();
   Wilayah? _selectedWilayahOrtu;
 
   /* ---------- Wali ---------- */
   final namaWaliCtrl = TextEditingController();
-  final alamatWaliCtrl = TextEditingController(); // 1 kolom saja
+  final alamatWaliCtrl = TextEditingController();
   Wilayah? _selectedWilayahWali;
 
   String? _selectedJenisKelamin;
   Wilayah? _selectedWilayahSiswa;
 
-  /* ---------- Helper ---------- */
   String _formatAlamat(Wilayah w) {
     final parts = [
       if (w.dusun.isNotEmpty) w.dusun,
@@ -85,7 +82,6 @@ class _FormPageState extends State<FormPage> {
     final ttl =
         '${tempatCtrl.text.trim()}, ${DateFormat('dd-MM-yyyy').format(selectedTglLahir!)}';
 
-    /* 1. Insert Orang Tua */
     await Supabase.instance.client.from('orang_tua').upsert([
       {
         'id': orangTuaId,
@@ -96,7 +92,6 @@ class _FormPageState extends State<FormPage> {
       },
     ]);
 
-    /* 2. Insert Wali (opsional) */
     if (namaWaliCtrl.text.trim().isNotEmpty) {
       await Supabase.instance.client.from('wali').upsert([
         {
@@ -108,7 +103,6 @@ class _FormPageState extends State<FormPage> {
       ]);
     }
 
-    /* 3. Siapkan data siswa */
     final siswaData = {
       'id': siswaId,
       'nisn': nisnCtrl.text.trim(),
@@ -120,17 +114,13 @@ class _FormPageState extends State<FormPage> {
       'nik': nikCtrl.text.trim(),
       'jalan': jalanCtrl.text.trim(),
       'rtrw': rtrwCtrl.text.trim(),
-      'alamat_id': _selectedWilayahSiswa!.id, // <- pastikan int
+      'alamat_id': _selectedWilayahSiswa!.id,
       'orang_tua_id': orangTuaId,
       'wali_id': namaWaliCtrl.text.trim().isEmpty ? null : waliId,
-      'provinsi':
-          _selectedWilayahSiswa?.provinsi ?? 'Jawa Timur', // <-- jangan null
+      'provinsi': _selectedWilayahSiswa?.provinsi ?? 'Jawa Timur',
       'created_at': DateTime.now().toIso8601String(),
     };
 
-    print('🔥 SISWA DATA: $siswaData'); // <-- SALIN INI KE DEBUG CONSOLE
-
-    /* 4. Insert Siswa */
     try {
       await Supabase.instance.client.from('siswa').insert([siswaData]);
       if (!mounted) return;
@@ -139,14 +129,74 @@ class _FormPageState extends State<FormPage> {
       ).showSnackBar(const SnackBar(content: Text('Data berhasil disimpan')));
       Navigator.pop(context, true);
     } catch (e) {
-      print('❌ SIMPAN ERROR: $e'); // <-- SALIN INI KE DEBUG CONSOLE
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal simpan: $e')));
     }
   }
 
-  /* ---------- Widget 1 Kolom Alamat + Auto-complete ---------- */
+  Widget _section(String title, List<Widget> children) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFE3F2FD), Color(0xFFBBDEFB)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(.15),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.badge_outlined,
+                size: 20,
+                color: Color(0xFF0D47A1),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0D47A1),
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24, thickness: 2, color: Color(0xFF0D47A1)),
+          const SizedBox(height: 8),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDec(String label) => InputDecoration(
+    labelText: label,
+    filled: true,
+    fillColor: Colors.white,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color.fromARGB(255, 99, 176, 253)),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color.fromARGB(255, 106, 172, 238)),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+  );
+
   Widget _alamatField({
     required String label,
     required TextEditingController controller,
@@ -155,16 +205,21 @@ class _FormPageState extends State<FormPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(height: 12),
         Text(
           label,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF0D47A1),
+          ),
         ),
         const SizedBox(height: 6),
         TypeAheadField<Wilayah>(
           textFieldConfiguration: TextFieldConfiguration(
             controller: controller,
             decoration: const InputDecoration(
-              labelText: 'Ketik dusun...',
+              hintText: 'Ketik dusun…',
               border: OutlineInputBorder(),
             ),
           ),
@@ -189,38 +244,51 @@ class _FormPageState extends State<FormPage> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
       ],
     );
   }
 
-  /* ---------- Build Form ---------- */
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 250, 251, 251),
       appBar: AppBar(
-        title: Text(widget.student == null ? 'Tambah Siswa' : 'Edit Siswa'),
+        toolbarHeight: 80,
+        elevation: 0,
+        title: Text(
+          widget.student == null ? 'Tambah Siswa' : 'Edit Siswa',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        centerTitle: true,
+        foregroundColor: Colors.white,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color.fromARGB(255, 82, 156, 230),
+                Color.fromARGB(255, 74, 167, 243),
+              ],
+            ),
+          ),
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+        ),
       ),
-      body: SafeArea(
+      body: Form(
+        key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                /* ---------- Siswa ---------- */
-                const Text(
-                  'Data Siswa',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: Column(
+            children: [
+              _section('Data Siswa', [
                 TextFormField(
                   controller: nisnCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'NISN *',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDec('NISN'),
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   validator: (v) {
@@ -230,17 +298,14 @@ class _FormPageState extends State<FormPage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 TextFormField(
                   controller: namaCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama Lengkap *',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDec('Nama Lengkap'),
                   validator: (v) =>
                       v == null || v.trim().isEmpty ? 'Nama wajib diisi' : null,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   value: _selectedJenisKelamin,
                   items: const [
@@ -254,34 +319,25 @@ class _FormPageState extends State<FormPage> {
                     ),
                   ],
                   onChanged: (v) => setState(() => _selectedJenisKelamin = v),
-                  decoration: const InputDecoration(
-                    labelText: 'Jenis Kelamin *',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDec('Jenis Kelamin'),
                   validator: (v) => v == null ? 'Pilih jenis kelamin' : null,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 TextFormField(
                   controller: agamaCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Agama *',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDec('Agama'),
                   validator: (v) => v == null || v.trim().isEmpty
                       ? 'Agama wajib diisi'
                       : null,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       flex: 3,
                       child: TextFormField(
                         controller: tempatCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Tempat Lahir *',
-                          border: OutlineInputBorder(),
-                        ),
+                        decoration: _inputDec('Tempat Lahir'),
                         validator: (v) => v == null || v.trim().isEmpty
                             ? 'Tempat lahir wajib'
                             : null,
@@ -292,10 +348,8 @@ class _FormPageState extends State<FormPage> {
                       flex: 4,
                       child: TextFormField(
                         readOnly: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Tanggal Lahir *',
-                          border: OutlineInputBorder(),
-                          suffixIcon: Icon(Icons.calendar_today),
+                        decoration: _inputDec('Tanggal Lahir').copyWith(
+                          suffixIcon: const Icon(Icons.calendar_today),
                         ),
                         controller: TextEditingController(
                           text: selectedTglLahir == null
@@ -320,25 +374,19 @@ class _FormPageState extends State<FormPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 TextFormField(
                   controller: telpCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'No. Telepon *',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDec('No. Telepon'),
                   keyboardType: TextInputType.phone,
                   validator: (v) => v == null || v.trim().isEmpty
                       ? 'No. telepon wajib'
                       : null,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 TextFormField(
                   controller: nikCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'NIK *',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDec('NIK'),
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   validator: (v) {
@@ -347,59 +395,40 @@ class _FormPageState extends State<FormPage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
                 _alamatField(
                   label: 'Alamat Siswa',
                   controller: alamatSiswaCtrl,
                   onSelected: (w) => _selectedWilayahSiswa = w,
                 ),
-                const SizedBox(height: 8),
                 TextFormField(
                   controller: jalanCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Jalan *',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDec('Jalan'),
                   validator: (v) => v == null || v.trim().isEmpty
                       ? 'Jalan wajib diisi'
                       : null,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 TextFormField(
                   controller: rtrwCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'RT/RW *',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDec('RT/RW'),
                   validator: (v) => v == null || v.trim().isEmpty
                       ? 'RT/RW wajib diisi'
                       : null,
                 ),
+              ]),
 
-                /* ---------- Orang Tua ---------- */
-                const SizedBox(height: 16),
-                const Text(
-                  'Data Orang Tua',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
+              _section('Data Orang Tua', [
                 TextFormField(
                   controller: namaAyahCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama Ayah *',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDec('Nama Ayah'),
                   validator: (v) => v == null || v.trim().isEmpty
                       ? 'Nama ayah wajib diisi'
                       : null,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 TextFormField(
                   controller: namaIbuCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama Ibu *',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDec('Nama Ibu'),
                   validator: (v) => v == null || v.trim().isEmpty
                       ? 'Nama ibu wajib diisi'
                       : null,
@@ -409,51 +438,66 @@ class _FormPageState extends State<FormPage> {
                   controller: alamatOrtuCtrl,
                   onSelected: (w) => _selectedWilayahOrtu = w,
                 ),
+              ]),
 
-                /* ---------- Wali ---------- */
-                const SizedBox(height: 16),
-                const Text(
-                  'Data Wali (Opsional)',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
+              _section('Data Wali (Opsional)', [
                 TextFormField(
                   controller: namaWaliCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama Wali',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDec('Nama Wali'),
                 ),
                 _alamatField(
                   label: 'Alamat Wali',
                   controller: alamatWaliCtrl,
                   onSelected: (w) => _selectedWilayahWali = w,
                 ),
+              ]),
 
-                const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-                /* ---------- Tombol ---------- */
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.save),
-                        label: const Text('Simpan'),
-                        onPressed: _save,
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.save, color: Colors.white),
+                      label: const Text(
+                        'Simpan',
+                        style: TextStyle(color: Colors.white),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.cancel),
-                        label: const Text('Batal'),
-                        onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        backgroundColor: const Color.fromARGB(
+                          255,
+                          61,
+                          148,
+                          234,
+                        ),
                       ),
+                      onPressed: _save,
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.cancel, color: Color(0xFF1976D2)),
+                      label: const Text(
+                        'Batal',
+                        style: TextStyle(color: Color(0xFF1976D2)),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
